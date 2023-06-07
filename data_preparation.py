@@ -6,6 +6,7 @@ from crawler_zigbang import crawl_main
 from preprocess1 import preprocess1
 from preprocess2 import preprocess2
 from preprocess_for_clustering import preprocess_for_clustering
+from preprocess_for_regression import preprocess_for_regression
 
 def get_data(): 
     warnings.filterwarnings('ignore')
@@ -34,10 +35,10 @@ def get_cluster_df():
     clustering_df = preprocess_for_clustering(zb_final_df) 
     return clustering_df
 
-# def get_regression_df():
-#     zb_final_df = get_data() 
-#     regression_df = preprocess_for_regression(zb_final_df)
-#     return regression_df 
+def get_regression_df():
+    zb_final_df = get_data() 
+    regression_df = preprocess_for_regression(zb_final_df)
+    return regression_df 
 
 # def get_text_df(): 
 #     zb_final_df = get_data() 
