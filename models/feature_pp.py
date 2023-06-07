@@ -26,14 +26,15 @@ def get_ev_score(row):
         return 1
 
 def get_finaldf():
-  db= pymysql.connect(
-      host="ec2-15-152-249-56.ap-northeast-3.compute.amazonaws.com", user="mt-1", password="1111", db="zigbang_project", charset="utf8")
-  # cursor = conn.cursor()
-  df = pd.read_sql("SELECT * FROM zb_final", db, index_col='id')
-  # result = cursor.fetchall()
-  # for record in result:
-  #     print(record)
-  db.close()
+    df = pd.read_csv('./final_df.csv',encoding='cp949')
+#   db= pymysql.connect(
+#       host="ec2-15-152-249-56.ap-northeast-3.compute.amazonaws.com", user="mt-1", password="1111", db="zigbang_project", charset="utf8")
+#   # cursor = conn.cursor()
+#   df = pd.read_sql("SELECT * FROM zb_final", db, index_col='id')
+#   # result = cursor.fetchall()
+#   # for record in result:
+#   #     print(record)
+#   db.close()
 
   df['rent_adjusted'] = df['deposit']*0.05/12 + df['rent'] + df['manage_cost']
 
