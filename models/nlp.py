@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from konlpy.tag import Okt 
+from konlpy.tag import Okt
 from pprint import pprint
 from gensim import corpora, models
 from gensim.models import LdaModel
@@ -10,13 +10,14 @@ import pyLDAvis.gensim_models as gensimvis
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from wordcloud import WordCloud
 
+
 def okt_tokenize(data):
     okt = Okt()
-    data['content'] = data['title'] + data['description']
-    data['token'] = ''
+    data["content"] = data["title"] + data["description"]
+    data["token"] = ""
     for i in range(len(data)):
-        data['token'].iloc[i] = okt.pos(data['content'].iloc[i])
-    data.to_csv('okt_tokenized.csv', encoding='euc-kr', index_label='id')
+        data["token"].iloc[i] = okt.pos(data["content"].iloc[i])
+    data.to_csv("okt_tokenized.csv", encoding="euc-kr", index_label="id")
     return data
 
 stop_words = ['등', '및', '비', '실', '무엇', '요즘', '직접', '개', '변','분','수','락','내','개월','번','입', '곳','확인', '리','이장','현재','조절','모두','총','전용','후','대수','매우', '등등','사항','정말','몸','호실','이','시', '완료','각종', '평수','다수', '실제', '편','톤','중','보시', '완전','구', '제','더','자도','위','언제',
@@ -25,14 +26,15 @@ stop_words = ['등', '및', '비', '실', '무엇', '요즘', '직접', '개', '
 '박자', '빅사', '부공', '장인근', '두루', '고로', '패드', '얼마나', '평이', '액자', '주지', '임의', '실매', '옵션'
 ]
 
+
 def strip_csv(data, stop_words):
     documents = []
     FEATURE_POS = ["Noun"]
     for row in data.token:
         morphs = []
-        row = row.strip('[').strip(']').strip('(').strip(')').split("), (")
+        row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
         for i in row:
-            i = i.split(', ')
+            i = i.split(", ")
             word = i[0].strip("'")
             pos = i[-1].strip("'")
             if pos not in FEATURE_POS:
@@ -42,18 +44,18 @@ def strip_csv(data, stop_words):
         documents.append(morphs)
     return documents
 
+
 def topic_model(df, documents, num):
     dictionary = corpora.Dictionary(documents)
     corpus = []
     for document in documents:
         bow = dictionary.doc2bow(document)
         corpus.append(bow)
-        
-    lda_model = models.ldamodel.LdaModel(corpus, num_topics=num, id2word=dictionary)  
+
+    lda_model = models.ldamodel.LdaModel(corpus, num_topics=num, id2word=dictionary)
 
     pprint(lda_model.print_topics())
     doc_lda = lda_model[corpus]
-
 
     vis_data = gensimvis.prepare(lda_model, corpus, dictionary)
 
@@ -62,62 +64,75 @@ def topic_model(df, documents, num):
 
     for i, row in enumerate(lda_model[corpus]):
         row = sorted(row, key=lambda x: (x[1]), reverse=True)
-        
+
         for j, (topic_num, prop_topic) in enumerate(row):
-            if j == 0: 
-                wp = lda_model.show_topic(topic_num,topn=10)
+            if j == 0:
+                wp = lda_model.show_topic(topic_num, topn=10)
                 topic_keywords = ", ".join([word for word, prop in wp])
-                sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]), ignore_index=True)
+                sent_topics_df = sent_topics_df.append(
+                    pd.Series([int(topic_num), round(prop_topic, 4), topic_keywords]),
+                    ignore_index=True,
+                )
             else:
                 break
-    sent_topics_df.columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords']
+    sent_topics_df.columns = ["Dominant_Topic", "Perc_Contribution", "Topic_Keywords"]
 
-    sent_topics_df.index=df.index
+    sent_topics_df.index = df.index
     text_df = pd.concat([df, sent_topics_df], axis=1)
 
-    text_df.to_csv('LDA_topic_text.csv', encoding = 'euc-kr', index='id')
+    text_df.to_csv("LDA_topic_text.csv", encoding="euc-kr", index="id")
 
     return text_df
 
-def wordCloud(text_df, stop_words):
-    for topic in range(0,3):
-        print('Topic no.', topic, 'WordCloud')
-        
-        FEATURE_POS = ["Noun"]
-        documents = []
 
-        for row in text_df[text_df['Dominant_Topic']==topic].token:
-            morphs = ''
-            row = row.strip('[').strip(']').strip('(').strip(')').split("), (")
-            for i in row:
-                i = i.split(', ')
-                word = i[0].strip("'")
-                pos = i[-1].strip("'")
-                if pos not in FEATURE_POS:
-                    continue
-                if word not in stop_words:
-                    morphs = morphs+word+" "
-            documents.append(morphs)
+def wordCloud(text_df, stop_words, col, val):
+    # for val in iter_value_list:
+    print(col, val, "WordCloud")
 
-        vectorizer = TfidfVectorizer()
-        vecs = vectorizer.fit_transform(documents)
-        dense = vecs.todense()
-        lst1 = dense.tolist()
-        df_tfidf = pd.DataFrame(lst1, columns=vectorizer.get_feature_names_out())
+    FEATURE_POS = ["Noun"]
+    documents = []
 
-        Cloud = WordCloud(font_path="PATH_malgunbd.ttf",
-                        relative_scaling = 0.2,
-                        background_color="white", max_words=50).generate_from_frequencies(df_tfidf.T.sum(axis=1))
-        plt.figure(figsize=(16,8))
-        plt.imshow(Cloud)
-        plt.axis("off")
-        plt.show()
+    for row in text_df[text_df[col] == val].token:
+        morphs = ""
+        row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
+        for i in row:
+            i = i.split(", ")
+            word = i[0].strip("'")
+            pos = i[-1].strip("'")
+            if pos not in FEATURE_POS:
+                continue
+            if word not in stop_words:
+                morphs = morphs + word + " "
+        documents.append(morphs)
 
-        plt.savefig(f.'topic{topic}+_wordcloud.png')
+    vectorizer = TfidfVectorizer()
+    vecs = vectorizer.fit_transform(documents)
+    dense = vecs.todense()
+    lst1 = dense.tolist()
+    df_tfidf = pd.DataFrame(lst1, columns=vectorizer.get_feature_names_out())
+
+    Cloud = WordCloud(
+        font_path="C:/Users/junel/Downloads/data/eda/malgunbd.ttf",
+        relative_scaling=0.2,
+        background_color="white",
+        max_words=50,
+    ).generate_from_frequencies(df_tfidf.T.sum(axis=1))
+    plt.figure(figsize=(16, 8))
+    plt.imshow(Cloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.show()
+
+    plt.savefig(f"{col}{val}_wordcloud.png")
     return
 
-# data 불러와서~~
-df = fp.get_finaldf()
-documents = strip_csv(okt_tokenize(data), stop_words)
+# how to use : import wc_test as wc
+
+df = fp.get_finaldf() # data 불러와서~~
+documents = strip_csv(okt_tokenize(df), stop_words)
 text_df = topic_model(df, documents, 3)
 wordCloud(text_df, stop_words)
+for topic in range(0,3): #토픽별로
+    wc.wordCloud(text_df, wc.stop_words, 'Dominant_Topic', topic)
+
+for sgg_cd in text_df['sgg_cd'].unique():
+    wc.wordCloud(text_df, wc.stop_words, 'sgg_cd', sgg_cd)
