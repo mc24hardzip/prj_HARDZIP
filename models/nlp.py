@@ -32,11 +32,16 @@ def strip_csv(data, stop_words):
     FEATURE_POS = ["Noun"]
     for row in data.token:
         morphs = []
-        row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
+        if type(row)==str:
+            row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
         for i in row:
-            i = i.split(", ")
-            word = i[0].strip("'")
-            pos = i[-1].strip("'")
+            if type(i)==str:
+                i = i.split(", ")
+                word = i[0].strip("'")
+                pos = i[-1].strip("'")
+            else:
+                word = i[0]
+                pos = i[-1]               
             if pos not in FEATURE_POS:
                 continue
             if word not in stop_words:
@@ -94,11 +99,16 @@ def wordCloud(text_df, stop_words, col, val):
 
     for row in text_df[text_df[col] == val].token:
         morphs = ""
-        row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
+        if type(row)==str:
+            row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
         for i in row:
-            i = i.split(", ")
-            word = i[0].strip("'")
-            pos = i[-1].strip("'")
+            if type(i)==str:
+                i = i.split(", ")
+                word = i[0].strip("'")
+                pos = i[-1].strip("'")
+            else:
+                word = i[0]
+                pos = i[-1]   
             if pos not in FEATURE_POS:
                 continue
             if word not in stop_words:
@@ -121,18 +131,7 @@ def wordCloud(text_df, stop_words, col, val):
     plt.imshow(Cloud, interpolation="bilinear")
     plt.axis("off")
     plt.show()
-
+    
     plt.savefig(f"{col}{val}_wordcloud.png")
     return
 
-# how to use : import wc_test as wc
-
-df = fp.get_finaldf() # data 불러와서~~
-documents = strip_csv(okt_tokenize(df), stop_words)
-text_df = topic_model(df, documents, 3)
-wordCloud(text_df, stop_words)
-for topic in range(0,3): #토픽별로
-    wc.wordCloud(text_df, wc.stop_words, 'Dominant_Topic', topic)
-
-for sgg_cd in text_df['sgg_cd'].unique():
-    wc.wordCloud(text_df, wc.stop_words, 'sgg_cd', sgg_cd)
