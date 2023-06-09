@@ -1,20 +1,18 @@
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import ElasticNet
-from sklearn.linear_model import Lasso
-from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
-import xgboost
-from lightgbm import LGBMRegressor
-from sklearn.metrics import mean_squared_error, r2_score
-import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression, Lasso, Ridge, ElasticNet
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+import xgboost
+from lightgbm import LGBMRegressor
 
 # import feature_pp as fp
 
@@ -68,7 +66,20 @@ def scaled_data(scaling_method, X_train, X_test):
 
 
 # ML 모델 with best parameter
-def get_model():
+def raw_model():
+    lr = LinearRegression()
+    lr_ridge = Ridge()
+    lr_lasso = Lasso()
+    elastic = ElasticNet()
+    rf = RandomForestRegressor(random_state=42)
+    gb = GradientBoostingRegressor(random_state=42)
+    xgb = xgboost.XGBRegressor(random_state=42)
+    lgbm = LGBMRegressor(random_state=42)
+    return lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm
+
+
+# ML 모델 with best parameter
+def get_bestparam_model():
     lr = LinearRegression()
     lr_ridge = Ridge(alpha=0.001)
     lr_lasso = Lasso(alpha=0.1)
@@ -76,7 +87,9 @@ def get_model():
     rf = RandomForestRegressor(
         n_estimators=621, min_samples_leaf=1, min_samples_split=5, random_state=42
     )
-    gb = GradientBoostingRegressor(n_estimators=954, learning_rate=0.09, subsample=0.8)
+    gb = GradientBoostingRegressor(
+        n_estimators=954, learning_rate=0.09, subsample=0.8, random_state=42
+    )
     xgb = xgboost.XGBRegressor(
         n_jobs=-1,
         n_estimators=2000,
@@ -85,6 +98,7 @@ def get_model():
         max_depth=6,
         subsample=0.75,
         gamma=10,
+        random_state=42,
     )
     lgbm = LGBMRegressor(
         n_estimators=448,
@@ -92,16 +106,16 @@ def get_model():
         max_depth=15,
         min_child_samples=40,
         num_leaves=23,
+        random_state=42,
     )
     return lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm
-
 
 
 # eval
 def model_eval(model, X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
 
-    y_pred_train = model.predict(X_train) 
+    y_pred_train = model.predict(X_train)
     mse_train = mean_squared_error(y_train, y_pred_train)
     r2_train = r2_score(y_train, y_pred_train)
 
@@ -115,16 +129,14 @@ def model_eval(model, X_train, X_test, y_train, y_test):
     return model, train_rmse, r2_train, test_rmse, r2_test
 
 
-
-
 # 모델결과 dataframe으로 변환하는 함수
 def making_df(models, model_names, X_train, X_test, y_train, y_test):
     results = []
     for model, name in zip(models, model_names):
-            model, train_rmse, r2_train, test_rmse, r2_test = model_eval(
-                model, X_train, X_test, y_train, y_test
-            )
-            results.append((name, train_rmse, r2_train, test_rmse, r2_test))
+        model, train_rmse, r2_train, test_rmse, r2_test = model_eval(
+            model, X_train, X_test, y_train, y_test
+        )
+        results.append((name, train_rmse, r2_train, test_rmse, r2_test))
     # 결과 출력
     results_df = pd.DataFrame(
         results, columns=["Model", "Train RMSE", "Train R^2", "Test RMSE", "Test R^2"]
@@ -132,102 +144,96 @@ def making_df(models, model_names, X_train, X_test, y_train, y_test):
     return results_df
 
 
-
 # 선형 모델 결과를 dataframe으로 받아오기 (input: 데이터 종류(original, poly, scaled))
-def get_linear_result_df(input, scaling_method = None):
+def get_linear_result_df(input, scaling_method=None, wanted_model=None):
     X, y = get_xy(df)
     X_train, X_test, y_train, y_test = data_split(X, y)
-    
-    if scaling_method == None:
-        if input == 'original':
-            pass    
-        elif input == 'poly':
-            X_train, X_test = poly_data(X_train, X_test)
-    
-    elif scaling_method != None:
-            # 스케일링 적용
-            scaling_method = scaling_method  # 원하는 스케일링 방법 선택
-            X_train, X_test = scaled_data(scaling_method, X_train, X_test)
 
-        
+    if scaling_method == None:
+        if input == "original":
+            pass
+        elif input == "poly":
+            X_train, X_test = poly_data(X_train, X_test)
+
+    elif scaling_method != None:
+        # 스케일링 적용
+        scaling_method = scaling_method  # 원하는 스케일링 방법 선택
+        X_train, X_test = scaled_data(scaling_method, X_train, X_test)
+
     # 사용할 모델 가져오기
-    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm = get_model()
+    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm = wanted_model()
 
     # 모델 평가
     models = [lr, lr_ridge, lr_lasso, elastic]
     model_names = [
-                        "Linear Regression",
-                        "Ridge Regression",
-                        "Lasso Regression",
-                        "ElasticNet",
-                        ]
+        "Linear Regression",
+        "Ridge Regression",
+        "Lasso Regression",
+        "ElasticNet",
+    ]
 
     results_df = making_df(models, model_names, X_train, X_test, y_train, y_test)
     print(results_df)
     return results_df
 
 
-
-
 #  트리 모델 결과를 dataframe으로 받아오기 (input: 데이터 종류(original, poly))
-def get_treemodel_result_df(input):
+def get_treemodel_result_df(input, scaling_method=None, wanted_model=None):
     X, y = get_xy(df)
     X_train, X_test, y_train, y_test = data_split(X, y)
 
-    if input == 'original':
-        pass    
-    elif input == 'poly':
+    if input == "original":
+        pass
+    elif input == "poly":
         X_train, X_test = poly_data(X_train, X_test)
-    elif input == 'scaled':
+    elif input == "scaled":
         # 스케일링 적용
         scaling_method = scaling_method  # 원하는 스케일링 방법 선택
         X_train, X_test = scaled_data(scaling_method, X_train, X_test)
-    
+
     # 사용할 모델 가져오기
-    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm = get_model()
+    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm = wanted_model()
 
     # 모델 평가
     models = [rf, gb, xgb, lgbm]
     model_names = [
-                    "Random Forest",
-                    "Gradient Boosting",
-                    "XGBoost",
-                    "LightGBM",
-                    ]
-    
+        "Random Forest",
+        "Gradient Boosting",
+        "XGBoost",
+        "LightGBM",
+    ]
+
     results_df = making_df(models, model_names, X_train, X_test, y_train, y_test)
     print(results_df)
-    
+
     return results_df
 
 
-
 # Top 10 feature_importance 뽑기
-def feature_importance(model, X_train): # fit이 끝난 모델이 필요
-    plt.rcParams['font.family'] = 'Malgun Gothic' # 한글깨짐 방지
-    
+def feature_importance(model, X_train):  # fit이 끝난 모델이 필요
+    plt.rcParams["font.family"] = "Malgun Gothic"  # 한글깨짐 방지
+
     feat_impt = model.feature_importances_
 
-    graph_data=pd.DataFrame()
+    graph_data = pd.DataFrame()
 
-    graph_data['feature']=X_train.columns.values
-    graph_data['importance']=feat_impt
-    graph_data_top=graph_data.nlargest(10,'importance')
+    graph_data["feature"] = X_train.columns.values
+    graph_data["importance"] = feat_impt
+    graph_data_top = graph_data.nlargest(10, "importance")
 
-    g=sns.barplot(y='feature',x='importance',data=graph_data_top,orient='h')
-    g.set_ylabel('Features',fontsize=12)
-    g.set_xlabel('Relative Importance')
-    g.set_title(type(model).__name__ )
+    g = sns.barplot(y="feature", x="importance", data=graph_data_top, orient="h")
+    g.set_ylabel("Features", fontsize=12)
+    g.set_xlabel("Relative Importance")
+    g.set_title(type(model).__name__)
     g.tick_params(labelsize=8)
     plt.tight_layout()
-        
+
     # print(graph_data.sort_values(by='importance', ascending=False).iloc[:11])
     return
 
 
-
 # 최종 모델 (service_type 별로 트리모델 돌리기) 결과 df로 반환
-def get_model_each_servcie(df):
+def get_model_each_servcie(df, wanted_model=None):
     X = df.drop(["rent_adjusted"], axis=1)
     X = pd.get_dummies(X)
     y = df["rent_adjusted"]
@@ -235,21 +241,184 @@ def get_model_each_servcie(df):
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 
     # 사용할 모델 가져오기
-    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm =get_model()
+    lr, lr_ridge, lr_lasso, elastic, rf, gb, xgb, lgbm = wanted_model()
 
     # 모델 평가
     model = xgb
     model_name = "XGBoost"
 
     model, train_rmse, r2_train, test_rmse, r2_test = model_eval(
-                                    model, X_train, X_test, y_train, y_test)
+        model, X_train, X_test, y_train, y_test
+    )
     results_data = [[model_name, train_rmse, r2_train, test_rmse, r2_test]]
-    results_df = pd.DataFrame(data = results_data, columns=["Model", "Train RMSE", "Train R^2", "Test RMSE", "Test R^2"])
+    results_df = pd.DataFrame(
+        data=results_data,
+        columns=["Model", "Train RMSE", "Train R^2", "Test RMSE", "Test R^2"],
+    )
     print(results_df)
     feature_importance(model, X_train)
-    
+
     return results_df
 
 
+def gradient_loss_function(learning_rate, n_estimators, subsample):
+    X, y = get_xy(df)
+    X_train, X_test, y_train, y_test = data_split(X, y)
+
+    # Define the parameters for the GradientBoostingRegressor
+    params = {
+        "loss": "absolute_error",
+        "learning_rate": learning_rate,
+        "n_estimators": int(n_estimators),
+        "subsample": subsample,
+    }
+
+    # Train the GradientBoostingRegressor model with the specified parameters
+    model = GradientBoostingRegressor(**params)
+    model.fit(X_train, y_train)
+
+    # Make predictions on the validation set
+    y_pred = model.predict(X_test)
+
+    # Calculate the mean squared error (MSE)
+    mse = mean_squared_error(y_test, y_pred)
+
+    # Return the negative MSE as the loss to be minimized
+    return -mse
 
 
+def random_forest_loss_function(
+    n_estimators, max_depth, min_samples_split, min_samples_leaf
+):
+    X, y = get_xy(df)
+    X_train, X_test, y_train, y_test = data_split(X, y)
+
+    # Define the parameters for the RandomForestRegressor
+    params = {
+        "n_estimators": int(n_estimators),
+        "max_depth": int(max_depth),
+        "min_samples_split": int(min_samples_split),
+        "min_samples_leaf": int(min_samples_leaf),
+    }
+
+    # Train the RandomForestRegressor model with the specified parameters
+    model = RandomForestRegressor(**params)
+    model.fit(X_train, y_train)
+
+    # Make predictions on the validation set
+    y_pred = model.predict(X_test)
+
+    # Calculate the mean squared error (MSE)
+    mse = mean_squared_error(y_test, y_pred)
+
+    # Return the negative MSE as the loss to be minimized
+    return -mse
+
+
+def xgboost_loss_function(learning_rate, max_depth, subsample, colsample_bytree):
+    X, y = get_xy(df)
+    X_train, X_test, y_train, y_test = data_split(X, y)
+
+    # Define the parameters for the XGBRegressor
+    params = {
+        "tree_method": "gpu_hist",
+        "learning_rate": learning_rate,
+        "max_depth": int(max_depth),
+        "subsample": subsample,
+        "colsample_bytree": colsample_bytree,
+    }
+
+    # Train the XGBRegressor model with the specified parameters
+    model = xgboost.XGBRegressor(**params)
+    model.fit(X_train, y_train)
+
+    # Make predictions on the validation set
+    y_pred = model.predict(X_test)
+
+    # Calculate the mean squared error (MSE)
+    mse = mean_squared_error(y_test, y_pred)
+
+    # Return the negative MSE as the loss to be minimized
+    return -mse
+
+
+def lightgbm_loss_function(
+    learning_rate, num_leaves, max_depth, n_estimators, min_child_samples
+):
+    X, y = get_xy(df)
+    X_train, X_test, y_train, y_test = data_split(X, y)
+
+    # Define the parameters for the LGBMRegressor
+    params = {
+        "tree_method": "gpu_hist",
+        "objective": "regression",
+        "metric": "mse",
+        "learning_rate": learning_rate,
+        "num_leaves": int(num_leaves),
+        "max_depth": int(max_depth),
+        "n_estimators": int(n_estimators),
+        "min_child_samples": int(min_child_samples),
+    }
+
+    # Train the LGBMRegressor model with the specified parameters
+    model = LGBMRegressor(**params)
+    model.fit(X_train, y_train)
+
+    # Make predictions on the validation set
+    y_pred = model.predict(X_test)
+
+    # Calculate the mean squared error (MSE)
+    mse = mean_squared_error(y_test, y_pred)
+
+    # Return the negative MSE as the loss to be minimized
+    return -mse
+
+
+# def grid_search_model(model, param_grid, X_train, X_test, y_train, y_test):
+#     grid_search = GridSearchCV(
+#         estimator=model, param_grid=param_grid, scoring="neg_mean_absolute_error"
+#     )
+#     grid_search.fit(X_train, y_train)
+
+#     best_params = grid_search.best_params_
+#     best_score = -grid_search.best_score_
+
+#     # Evaluate the best model on the test set
+#     best_model = model.set_params(**best_params)
+#     best_model.fit(X_train, y_train)
+#     test_score = -best_model.score(X_test, y_test)
+
+#     return best_params, best_score, test_score
+
+
+# def get_best_params():
+#     X, y = get_xy(df)
+#     X_train, X_test, y_train, y_test = data_split(X, y)
+
+#     models = {
+#         "Linear Regression": LinearRegression(),
+#         "Lasso": Lasso(),
+#         "Ridge": Ridge(),
+#         "ElasticNet": ElasticNet(),
+#     }
+
+#     param_grids = {
+#         "Linear Regression": {"normalize": [True, False]},
+#         "Lasso": {"alpha": [0.1, 0.5, 1.0]},
+#         "Ridge": {"alpha": [0.1, 0.5, 1.0]},
+#         "ElasticNet": {"alpha": [0.1, 0.5, 1.0], "l1_ratio": [0.2, 0.5, 0.8]},
+#     }
+
+#     best_params = {}
+#     best_scores = {}
+#     test_scores = {}
+
+#     for model_name, model in models.items():
+#         param_grid = param_grids[model_name]
+#         (
+#             best_params[model_name],
+#             best_scores[model_name],
+#             test_scores[model_name],
+#         ) = grid_search_model(model, param_grid, X_train, X_test, y_train, y_test)
+
+#     return best_params, best_scores, test_scores
