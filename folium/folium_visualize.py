@@ -9,14 +9,14 @@ def adjust_cluster(row):
     else:
         return row['cluster']
 
-def color_select(row):
-    cluster = row['cluster']
+def color_select(row, column):
+    group = int(row[column])
     
     colors = ['red', 'orange', 'yellow', 'green', 'blue', 'violet', 'indigo',
               'black', 'pink', 'brown', 'purple', 'gray', 'olive', 'cyan',
               'magenta', 'lime', 'teal', 'navy']
     
-    return colors[cluster]
+    return colors[group]
 
 def popup_text(row):
     pop_up_text = f"""
@@ -62,16 +62,19 @@ def popup_text(row):
     """
     return pop_up_text
 
-def create_map(dataframe, num_clusters, location=[37.55, 127.08],
+def create_map(dataframe, column, location=[37.55, 127.08],
                zoom_start=15):
     map = folium.Map(location=location, zoom_start=zoom_start)
 
     for i, row in dataframe.iterrows():
         address = dataframe['address1'][i] + dataframe['address2'][i]
-        iframe = IFrame(popup_text(row))
-        popup = Popup(iframe, min_width=500, max_width=500)
+        if column=='cluster':
+            iframe = IFrame(popup_text(row))
+            popup = Popup(iframe, min_width=500, max_width=500)        
+        else:
+            popup=None
         Circle(location = [row['y_w84'], row['x_w84']],
-               popup=popup, color=color_select(row, num_clusters),
+               popup=popup, color=color_select(row, column),
                radius=50, tooltip=address).add_to(map)
     
     return map
