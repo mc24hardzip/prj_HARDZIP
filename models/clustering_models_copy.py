@@ -147,31 +147,34 @@ def elbow_method(dataframe):
     plt.show()
 
 # eps 구하기위한 k-distance <- Nearest Neighbors
-def k_distance_plot(dataframe, scaling_method, n_neighbors):
+def k_distance_plot(dataframe):
 
     standard_df, minmax_df, robust_df, df_ohe = make_scaled_df(dataframe)
 
-    if scaling_method == 'standard':
-        data = standard_df
-    elif scaling_method == 'minmax':
-        data = minmax_df
-    elif scaling_method == 'robust':
-        data = robust_df
-    elif scaling_method == 'unscaled':
-        data = df_ohe
+    df_list = [df_ohe, standard_df, minmax_df, robust_df]
+    df_names = ['Data Unscaled', 'Data Standard Scaled', 'Data Minmax Scaled', 'Data Robust Scaled']
 
-    nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(data)
-                                            
-    distances, indices = nbrs.kneighbors(data) 
+    fig, axes = plt.subplots(2, 2, figsize=(20, 12)) 
+    axes = axes.ravel()
+    
+    nbrs = NearestNeighbors(n_neighbors=2).fit(dataframe)
+    
+    distances, indices = nbrs.kneighbors(dataframe)
 
     distances = np.sort(distances, axis=0)
-    distances = distances[:, 1]  
+    distances = distances[:, 1]
 
-    plt.figure(figsize=(10,5))
-    plt.plot(distances)
-    plt.title('K-distance Graph')
-    plt.xlabel('Data Points sorted by distance')
-    plt.ylabel('Epsilon')
+    for i, (data, name) in enumerate(zip(df_list, df_names)):
+        nbrs = NearestNeighbors(n_neighbors=2).fit(data)
+        distances, indices = nbrs.kneighbors(data)
+        distances = np.sort(distances, axis=0)
+        distances = distances[:, 1]
+
+        axes[i].plot(distances)
+        axes[i].set_xlabel('Data Points sorted by distance')
+        axes[i].set_ylabel('Epsilon')
+        axes[i].set_title(f'K-distance Graph - {name}')
+    plt.tight_layout()
     plt.show()
 
 # KMeans, DBSCAN, MeanShift 모델 피팅 
@@ -246,6 +249,30 @@ def comparison_of_scores_kmeans(clustering_df, param_combinations, params):
         n_clusters = kwargs['n_clusters']
         _, _, silhouette_avg, _, _, _ = cluster_evaluation(clustering_df, **kwargs)
         print(f"method: {method}, scaling_method: {scaling_method}, dim_reduction_method: {dim_reduction_method}, n_components: {n_components}, n_clusters: {n_clusters}, silhouette_avg: {silhouette_avg}")
+
+# DBSCAN 파라미터 조합 비교 함수
+def get_dbscan_parameter_score(dataframe, method, scaling_method, dim_reduction_method, n_components, n_clusters, eps, min_samples):
+    dim_reduce_data, cluster_labels = clustering_model(dataframe, method, scaling_method, dim_reduction_method, n_components, n_clusters, eps, min_samples)
+    silhouette_avg = silhouette_score(dim_reduce_data, cluster_labels)
+
+    dbscan = DBSCAN(eps = eps, min_samples = min_samples)
+    model = dbscan.fit(dim_reduce_data)
+    
+    labels = model.labels_
+    unique_labels = set(labels)
+
+    if -1 in unique_labels:
+        noise_exists = 1
+    else:
+        noise_exists = 0
+
+    n_clusters = len(unique_labels) - noise_exists
+
+    if n_clusters > 1:
+        silhouette_avg = silhouette_score(dim_reduce_data, cluster_labels)
+        print(f'method: {method}, scaling_method: {scaling_method}, n_components: {n_components}, eps: {eps}, min_samples: {min_samples}, Silhouette score: {silhouette_avg:.2f}')
+    else:
+        print(f'n_components: {n_components}, eps: {eps}, min_samples: {min_samples}, Silhouette score N/A for single cluster.')
 
 # 3차원 그래프 시각화 
 def cluster_visualization(dataframe, *args, **kwargs):
@@ -379,3 +406,4 @@ def visualize_service_type(dataframe, *args, **kwargs):
 
     for columns in columns_to_compare:
         compare_columns(comparison, columns)
+        
