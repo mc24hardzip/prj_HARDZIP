@@ -127,7 +127,7 @@ def wordCloud(text_df, stop_words, col, val):
         background_color="white",
         max_words=50,
     ).generate_from_frequencies(df_tfidf.T.sum(axis=1))
-    plt.figure(figsize=(16, 8))
+    plt.figure(figsize=(10, 6))
     plt.imshow(Cloud, interpolation="bilinear")
     plt.axis("off")
     plt.show()
