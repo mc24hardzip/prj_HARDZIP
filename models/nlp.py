@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
+plt.style.use ('ggplot')
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['font.size'] = 7.5
 from konlpy.tag import Okt
 from pprint import pprint
 from gensim import corpora, models
@@ -9,7 +13,9 @@ import pyLDAvis
 import pyLDAvis.gensim_models as gensimvis
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from wordcloud import WordCloud
-
+import eda_plot as eda
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 def okt_tokenize(data):
     okt = Okt()
@@ -27,6 +33,16 @@ stop_words = ['등', '및', '비', '실', '무엇', '요즘', '직접', '개', '
 ]
 
 
+def i_strip(i):
+    if type(i)==str:
+        i = i.split(", ")
+        word = i[0].strip("'")
+        pos = i[-1].strip("'")
+    else:
+        word = i[0]
+        pos = i[-1]
+    return word, pos
+
 def strip_csv(data, stop_words):
     documents = []
     FEATURE_POS = ["Noun"]
@@ -35,13 +51,7 @@ def strip_csv(data, stop_words):
         if type(row)==str:
             row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
         for i in row:
-            if type(i)==str:
-                i = i.split(", ")
-                word = i[0].strip("'")
-                pos = i[-1].strip("'")
-            else:
-                word = i[0]
-                pos = i[-1]               
+            word, pos = i_strip(i)
             if pos not in FEATURE_POS:
                 continue
             if word not in stop_words:
@@ -102,13 +112,7 @@ def wordCloud(text_df, stop_words, col, val):
         if type(row)==str:
             row = row.strip("[").strip("]").strip("(").strip(")").split("), (")
         for i in row:
-            if type(i)==str:
-                i = i.split(", ")
-                word = i[0].strip("'")
-                pos = i[-1].strip("'")
-            else:
-                word = i[0]
-                pos = i[-1]   
+            word, pos = i_strip(i)
             if pos not in FEATURE_POS:
                 continue
             if word not in stop_words:
@@ -127,7 +131,7 @@ def wordCloud(text_df, stop_words, col, val):
         background_color="white",
         max_words=50,
     ).generate_from_frequencies(df_tfidf.T.sum(axis=1))
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(8, 6))
     plt.imshow(Cloud, interpolation="bilinear")
     plt.axis("off")
     plt.show()
@@ -135,3 +139,43 @@ def wordCloud(text_df, stop_words, col, val):
     plt.savefig(f"{col}{val}_wordcloud.png")
     return
 
+def nlp_categorical_plot(data):
+    fig, ax = plt.subplots(ncols=2, nrows=2, figsize=(12,8))
+    sns.barplot(x=[0,1,2], y=data.Dominant_Topic.value_counts(normalize=True), ax=ax[0][0])
+    row, col= 0,1
+    for hue in eda.zigbang_categorical:
+        sns.countplot(data=data, x='Dominant_Topic' , hue=hue, ax=ax[row][col])
+        col+=1
+        if col==2:
+            col=0
+            row+=1
+    plt.show()
+    return
+
+
+def wordCloud_by_sgg(data):
+    sgg_nm_input = str(input('시군구 명 입력 (예: 마포구) : '))
+    print('입력하신 시군구 지역 : ', sgg_nm_input)
+    sgg_cd_out = int(data[data['sgg_nm']==sgg_nm_input].sgg_cd.unique())
+    wordCloud(data, stop_words, 'sgg_cd', sgg_cd_out)
+    return
+
+def box_by_topic(data, mode):
+    if mode=='local':
+        cols = eda.local_building_type+eda.local_hhd+eda.local_per_ppltn+eda.local_tenure+eda.local_app+eda.local_comf+['ppltn_total', 'gender_ratio', 'ppltn_foreign_domestic_ratio', 'ppltn_upper_65_p', 'ppltn_dnsty', 'ppltn_adult_p', 'ssg_ppltn', 'ppltn_net_migration_rate']
+    elif mode=='zigbang':
+        cols = ['_floor', 'size_m2']+eda.room_cost+eda.room_env
+    size=int(np.ceil(len(cols)/4))
+    fig, axes = plt.subplots(size,4, figsize = (10, size*3), constrained_layout=True)
+    font_dict={'fontsize': 10}
+    row=0
+    col=0
+    for c in cols:
+        sns.boxplot(x="Dominant_Topic", y=c, data=data[data['Perc_Contribution']>0.5], ax=axes[row,col])
+        col+=1
+        if col==4:
+            row+=1
+            col=0
+    plt.savefig(f"{mode}_box_by_topic.png")
+    plt.show()
+    return
