@@ -1,3 +1,16 @@
+"""
+
+이 파이썬 파일은 zigbang 웹사이트로부터 월세와 전세 부동산 매물 정보를 크롤링하는데 
+사용됩니다 
+
+1. requests와 json 라이브러리를 사용하여 zigbang API에 요청을 보내고 응답을 
+처리합니다
+2. 필요한 정보를 수집하기 위해 여러 API 엔드포인트와 헤더를 사용합니다 
+3. geocode로 선택한 여러 지역의 매물 정보를 크롤링 하고 데이터 필터링 후에 기본
+전처리를 해서 pandas DataFrame에 저장합니다 
+
+"""
+
 import requests
 import json
 import uuid
@@ -8,7 +21,8 @@ import pandas as pd
 uuid = str(uuid.uuid4())
 item_list_api = "https://apis.zigbang.com/v2/items"
 describe_list_api = item_list_api + '/list'
-item_describe_api = "https://apis.zigbang.com/v3/items?item_ids={item_id}&detail=true"
+item_describe_api = "https://apis.zigbang.com/v3/items?item_ids=\
+    {item_id}&detail=true"
 item_view_url = "https://zigbang.com/home/oneroom/items/{item_id}"
 referer = "https://zigbang.com/home/oneroom/subways/414/items"
 
@@ -19,7 +33,9 @@ headers = {
     'Cache-Control':'no-cache',
     'Accept':'application/json, text/plain, */*',
     'Origin':'https://zigbang.com',
-    'User-Agent':'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Mobile Safari/537.36',
+    'User-Agent':'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N)\
+        AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Mobile\
+            Safari/537.36',
     'DNT':'1',
     'Sec-Fetch-Site':'same-site',
     'Sec-Fetch-Mode':'cors',
@@ -195,17 +211,22 @@ def crawl(geo_loc, apt_type):
     outside_provinces = ['강원도', '충청남도', '충청북도']
     
     for item in item_list:
-        if item['address1'].split()[0] in outside_provinces or item['size'] > 100:
+        if item['address1'].split()[0] in outside_provinces\
+            or item['size'] > 100:
             continue 
         else:
             item['description'] = item['description'].replace('\n', ' ')
-            item['description'] = re.sub(r"[^A-Za-z0-9가-힣 ]", " ", item['description'])
+            item['description'] = re.sub(r"[^A-Za-z0-9가-힣 ]", " ",
+                                         item['description'])
             item['description'] = item['description'].strip() 
             item['title'] = re.sub(r"[^A-Za-z0-9가-힣 ]", " ", item['title'])
             item['title'] = item['title'].strip() 
-            item['manage_cost'] = item['manage_cost'].replace("없음", "0").replace("만원", "")        
-            item['elevator'] = item['elevator'].replace("없음", "0").replace("있음", "1")
-            item['parking'] = item['parking'].replace("불가능", "0").replace("가능", "1")
+            item['manage_cost'] = item['manage_cost'].replace(
+                "없음", "0").replace("만원", "")        
+            item['elevator'] = item['elevator'].replace(
+                "없음", "0").replace("있음", "1")
+            item['parking'] = item['parking'].replace(
+                "불가능", "0").replace("가능", "1")
             item['_floor'] = remove_non_digits(item['_floor'])
             processed_item_list.append(item)
 
