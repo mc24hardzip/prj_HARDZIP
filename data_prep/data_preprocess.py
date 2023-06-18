@@ -339,6 +339,11 @@ def preprocess_for_clustering(df):
                 df['safety_idx'].iloc[i] = j
                 break 
 
+    df = df[df["manage_cost"] <= 100]
+    df = df[df["rent"] <= 1000]
+    df = df[~((df["service_type"] == "원룸") & (df["size_m2"] > 99))]
+    df = df[~((df["service_type"] == "원룸") & (df["manage_cost"] > 50))]
+
     return df
 
 
@@ -415,7 +420,6 @@ def preprocess_for_regression(df):
 
     df = df[df["manage_cost"] <= 100]
     df = df[df["rent"] <= 1000]
-    df = df[df["size_m2"] <= 150]
     df = df[~((df["service_type"] == "원룸") & (df["size_m2"] > 99))]
     df = df[~((df["service_type"] == "원룸") & (df["manage_cost"] > 50))]
     
