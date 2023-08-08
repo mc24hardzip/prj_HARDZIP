@@ -58,6 +58,7 @@ def get_cluster_df():
 def get_regression_df():
     final_refined_df = get_data()
     regression_df = preprocess_for_regression(final_refined_df)
+    # regression_df.to_csv("regression_df.csv", encoding="utf-8-sig", index=False)
     return regression_df
 
 
