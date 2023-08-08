@@ -1,0 +1,23 @@
+!pip install requests
+!pip install json
+!pip install uuid
+!pip install inspect
+!pip install re
+!pip install requests
+!pip install warnings
+
+!pip install numpy
+!pip install pandas
+!pip install seaborn
+!pip install matplotlib
+!pip install sklearn
+!pip install xgboost
+!pip install lightgbm
+!pip install scipy
+
+!pip install mpl_toolkits
+!pip install konlpy
+!pip install pprint
+!pip install gensim
+!pip install wordcloud
+!pip install itertools
