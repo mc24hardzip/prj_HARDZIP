@@ -20,7 +20,7 @@
 
 <br>
 
-![시스템 흐름도](.\visualization\시스템흐름도.png)
+![시스템 흐름도](./visualization/시스템흐름도.png)
 시스템 흐름도
 
 <br>
