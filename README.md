@@ -85,7 +85,7 @@ prerequisites.txt
 `crawler_zigbang.py` 월세와 전세 부동산 매물 정보 크롤링(zigbang)<br>
 `data_preparation.py` 군집, 회귀 데이터 프레임 생성<br>
 `data_preprocess.py` 군집, 회귀 데이터 프레임의 전처리<br>
-`sgis.py` 통계 데이터 수집
+`sgis.py` 통계 데이터 수집<br>
 
 ### models
 
@@ -98,7 +98,7 @@ prerequisites.txt
 `eda_plot.py` eda 시각화<br>
 `folium_data_prep.py` folium에 사용할 데이터프레임 생성<br>
 `folium_visualize.py` folium html 생성<br>
-`perform_clustering.py` 군집 시각화
+`perform_clustering.py` 군집 시각화<br>
 
 ## Usage
 
