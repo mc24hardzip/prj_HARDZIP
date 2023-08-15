@@ -37,13 +37,17 @@
 <br>
 <br>
 
-## ![회귀모델링 흐름도](./visualization/회귀모델링흐름도.png)
-
 회귀모델링 흐름도
 
-## ![군집모델링 흐름도](./visualization/군집모델링흐름도.png)
+## ![회귀모델링 흐름도](./visualization/회귀모델링흐름도.png)
+
+군집분석 절차
+
+## ![군집분석 절차](./visualization/군집분석절차.png)
 
 군집모델링 흐름도
+
+## ![군집모델링 흐름도](./visualization/군집모델링흐름도.png)
 
 <br>
 
