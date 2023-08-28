@@ -386,6 +386,15 @@ def preprocess_for_clustering(df):
     """
     import pandas as pd
 
+    df["rent_adjusted"] = (
+        df["rent"] + df["deposit"] * 0.05 / 12 + df["manage_cost"]
+    ).round(3)
+
+    df = df[df["manage_cost"] <= 100]
+    df = df[df["rent"] <= 1000]
+    df = df[~((df["service_type"] == "원룸") & (df["size_m2"] > 99))]
+    df = df[~((df["service_type"] == "원룸") & (df["manage_cost"] > 50))]
+
     drop_column = [
         "id",
         "address1",
