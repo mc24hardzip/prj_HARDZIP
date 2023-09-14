@@ -49,6 +49,14 @@
 
 ## ![군집모델링 흐름도](./visualization/군집모델링흐름도.png)
 
+폴리움 지도 시각화 
+
+## ![폴리움 지도 시각화](./visualization/folium.png)
+
+군집 결과 서비스 예시 
+
+## ![군집 결과 서비스 예시](./visualization/cluster_example.png)
+
 <br>
 
 ### Data Source
